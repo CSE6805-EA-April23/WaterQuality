@@ -6,4 +6,4 @@ from sklearn.ensemble import RandomForestClassifier
 import pandas as pd
 
 # Load the dataset with missing values denoted as 'NA'
-data = pd.read_csv('/kaggle/input/water-quality/WaterQuality.csv', na_values='NA')
+data = pd.read_csv('WaterQuality.csv', na_values='NA')
