@@ -1,0 +1,305 @@
+import pandas as pd
+
+# Load the dataset
+data = pd.read_csv('1_gecco2018_water_quality.csv')
+
+# Display basic information and first few rows of the dataset
+info = data.info()
+head = data.head()
+
+info, head
+
+# Drop the 'Unnamed: 0' column
+data = data.drop(columns=['Unnamed: 0'])
+
+# Impute missing values with median of each column
+data = data.fillna(data.median())
+
+# Convert 'EVENT' column to binary format (0 for False, 1 for True)
+data['EVENT'] = data['EVENT'].astype(int)
+
+# Display the first few rows of the preprocessed dataset
+preprocessed_head = data.head()
+preprocessed_info = data.info()
+
+preprocessed_head, preprocessed_info
+
+import numpy as np
+
+# Set the random seed for reproducibility
+np.random.seed(0)
+
+# Set parameters
+population_size = 50  # Initial population size
+num_features = data.shape[1] - 2  # Number of features (excluding 'Time' and 'EVENT' columns)
+individual_length = num_features  # Length of an individual (equal to the number of features)
+
+# Initialize population: Randomly generate weights for each individual in the population
+initial_population = np.random.uniform(-1, 1, size=(population_size, individual_length))
+
+# Display the shape and first few individuals in the initial population
+initial_population_shape = initial_population.shape
+initial_population[:5, :]
+
+from sklearn.metrics import accuracy_score
+
+def calculate_fitness(individual, features, targets):
+    """
+    Calculate the fitness of an individual based on classification accuracy.
+    Args:
+    individual (np.array): The weight vector representing an individual.
+    features (np.array): The feature matrix of the dataset.
+    targets (np.array): The target values of the dataset.
+
+    Returns:
+    float: The fitness value of the individual.
+    """
+    # Calculate weighted sum of features
+    weighted_sum = np.dot(features, individual)
+
+    # Apply threshold to classify as 0 or 1
+    predictions = (weighted_sum > 0).astype(int)
+
+    # Calculate and return accuracy as fitness
+    return accuracy_score(targets, predictions)
+
+# Extract features and targets from the preprocessed dataset
+features = data.drop(columns=['Time', 'EVENT']).values
+targets = data['EVENT'].values
+
+# Test the fitness function with the first individual in the initial population
+first_individual_fitness = calculate_fitness(initial_population[0], features, targets)
+first_individual_fitness
+
+# Set initial parameters
+num_subcomponents = 3  # Number of subcomponents
+num_generations = 50  # Number of generations
+mutation_rate = 0.01  # Mutation rate
+
+# Decompose the problem into subcomponents
+# Distribute the weights among the subcomponents as evenly as possible
+subcomponent_size = individual_length // num_subcomponents
+remainder = individual_length % num_subcomponents
+
+# Initialize subcomponents
+subcomponents = []
+start = 0
+for i in range(num_subcomponents):
+    end = start + subcomponent_size + (1 if i < remainder else 0)
+    subcomponent = initial_population[:, start:end]
+    subcomponents.append(subcomponent)
+    start = end
+
+# Display the shape of each subcomponent
+subcomponent_shapes = [subcomponent.shape for subcomponent in subcomponents]
+subcomponent_shapes
+
+def tournament_selection(subcomponent, other_subcomponents, features, targets, k=3):
+    """
+    Select an individual using tournament selection.
+    Args:
+    subcomponent (np.array): The subcomponent from which to select individuals.
+    other_subcomponents (list of np.array): The other subcomponents to form complete individuals.
+    features (np.array): The feature matrix of the dataset.
+    targets (np.array): The target values of the dataset.
+    k (int): The number of individuals participating in the tournament.
+
+    Returns:
+    np.array: The selected individual.
+    """
+    # Select k random individuals from the subcomponent
+    participants = subcomponent[np.random.choice(subcomponent.shape[0], size=k, replace=False)]
+
+    # Evaluate the fitness of each participant
+    fitness_values = []
+    for ind in participants:
+        # Combine with other subcomponents to form a complete individual
+        complete_individual = np.concatenate([ind] + [sub.mean(axis=0) for sub in other_subcomponents])
+        fitness_values.append(calculate_fitness(complete_individual, features, targets))
+
+    # Select the participant with the highest fitness
+    winner_index = np.argmax(fitness_values)
+    return participants[winner_index]
+
+# Test the tournament selection operator with the first subcomponent
+selected_individual = tournament_selection(subcomponents[0], subcomponents[1:], features, targets)
+selected_individual
+
+def uniform_crossover(parent1, parent2):
+    """
+    Perform uniform crossover between two parents.
+    Args:
+    parent1 (np.array): The first parent individual.
+    parent2 (np.array): The second parent individual.
+
+    Returns:
+    np.array: The offspring individual.
+    """
+    # Generate a mask for selecting genes from parent1
+    mask = np.random.choice([True, False], size=parent1.shape, p=[0.5, 0.5])
+
+    # Initialize offspring
+    offspring = np.zeros_like(parent1)
+
+    # Select genes from parent1 and parent2 based on the mask
+    offspring[mask] = parent1[mask]
+    offspring[~mask] = parent2[~mask]
+
+    return offspring
+
+def mutate(individual, mutation_rate):
+    """
+    Apply mutation to an individual with a certain probability.
+    Args:
+    individual (np.array): The individual to mutate.
+    mutation_rate (float): The probability of mutating each gene.
+
+    Returns:
+    np.array: The mutated individual.
+    """
+    # Generate a mask for selecting genes to mutate
+    mutation_mask = np.random.choice([True, False], size=individual.shape, p=[mutation_rate, 1 - mutation_rate])
+
+    # Apply mutation: add small random values to the selected genes
+    mutation_values = np.random.uniform(-0.1, 0.1, size=individual.shape)
+    individual[mutation_mask] += mutation_values[mutation_mask]
+
+    return individual
+
+# Test crossover and mutation operators
+parent1 = selected_individual
+parent2 = tournament_selection(subcomponents[0], subcomponents[1:], features, targets)
+
+offspring = uniform_crossover(parent1, parent2)
+mutated_offspring = mutate(offspring, mutation_rate)
+
+parent1, parent2, offspring, mutated_offspring
+
+def evolve_subcomponent(subcomponent, other_subcomponents, features, targets, mutation_rate):
+    """
+    Evolve a subcomponent using genetic operators.
+    Args:
+    subcomponent (np.array): The subcomponent to evolve.
+    other_subcomponents (list of np.array): The other subcomponents to form complete individuals.
+    features (np.array): The feature matrix of the dataset.
+    targets (np.array): The target values of the dataset.
+    mutation_rate (float): The probability of mutating each gene.
+
+    Returns:
+    np.array: The evolved subcomponent.
+    """
+    # Initialize new population
+    new_population = np.zeros_like(subcomponent)
+
+    # Generate new individuals through crossover and mutation
+    for i in range(subcomponent.shape[0]):
+        # Select parents using tournament selection
+        parent1 = tournament_selection(subcomponent, other_subcomponents, features, targets)
+        parent2 = tournament_selection(subcomponent, other_subcomponents, features, targets)
+
+        # Perform crossover to generate offspring
+        offspring = uniform_crossover(parent1, parent2)
+
+        # Apply mutation to offspring
+        mutated_offspring = mutate(offspring, mutation_rate)
+
+        # Add mutated offspring to new population
+        new_population[i] = mutated_offspring
+
+    return new_population
+
+# Test the evolution process within the first subcomponent
+evolved_subcomponent = evolve_subcomponent(subcomponents[0], subcomponents[1:], features, targets, mutation_rate)
+evolved_subcomponent[:5, :]  # Display the first few individuals in the evolved subcomponent
+
+def recombine_and_evaluate(subcomponents, features, targets):
+    """
+    Recombine subcomponents to form complete solutions and evaluate their fitness.
+    Args:
+    subcomponents (list of np.array): The subcomponents to recombine.
+    features (np.array): The feature matrix of the dataset.
+    targets (np.array): The target values of the dataset.
+
+    Returns:
+    np.array: The fitness values of the complete solutions.
+    """
+    # Number of individuals in a subcomponent
+    num_individuals = subcomponents[0].shape[0]
+
+    # Initialize array to store fitness values
+    fitness_values = np.zeros(num_individuals)
+
+    # Recombine and evaluate each complete solution
+    for i in range(num_individuals):
+        # Combine sub-individuals from each subcomponent to form a complete individual
+        complete_individual = np.concatenate([sub[i] for sub in subcomponents])
+
+        # Evaluate and store fitness of the complete individual
+        fitness_values[i] = calculate_fitness(complete_individual, features, targets)
+
+    return fitness_values
+
+# Test recombination and evaluation with the initial subcomponents
+initial_fitness_values = recombine_and_evaluate(subcomponents, features, targets)
+initial_fitness_values[:5]  # Display the fitness values of the first few complete solutions
+
+def decompose_into_subcomponents(initial_population, num_subcomponents):
+    """
+    Decompose the initial population into subcomponents.
+    Args:
+    initial_population (np.array): The initial population of complete individuals.
+    num_subcomponents (int): The number of subcomponents to decompose into.
+
+    Returns:
+    list of np.array: The decomposed subcomponents.
+    """
+    subcomponent_size = individual_length // num_subcomponents
+    remainder = individual_length % num_subcomponents
+    subcomponents = []
+    start = 0
+    for i in range(num_subcomponents):
+        end = start + subcomponent_size + (1 if i < remainder else 0)
+        subcomponent = initial_population[:, start:end]
+        subcomponents.append(subcomponent)
+        start = end
+    return subcomponents
+
+    # Optimization Strategy 1: Use a Subset for Evaluation
+subset_size = int(0.1 * len(data))  # Use 10% of the data for fitness evaluations
+evaluation_subset = data.sample(subset_size, random_state=0)
+evaluation_features = evaluation_subset.drop(columns=['Time', 'EVENT']).values
+evaluation_targets = evaluation_subset['EVENT'].values
+
+# Optimization Strategy 2: Reduce Population Size
+reduced_population_size = 20  # Reduced population size
+
+# Re-initialize population with reduced size and decompose into subcomponents
+initial_population_reduced = np.random.uniform(-1, 1, size=(reduced_population_size, individual_length))
+subcomponents_reduced = decompose_into_subcomponents(initial_population_reduced, num_subcomponents)
+
+# Optimization Strategy 3: Optimize Fitness Calculation (within the existing function)
+
+# Run the algorithm again with optimizations
+def run_optimized_cca(data, num_generations=50, num_subcomponents=3, mutation_rate=0.01):
+    # Main algorithm loop
+    for generation in range(num_generations):
+        # Evolve each subcomponent
+        for i in range(num_subcomponents):
+            other_subcomponents = subcomponents_reduced[:i] + subcomponents_reduced[i+1:]
+            subcomponents_reduced[i] = evolve_subcomponent(subcomponents_reduced[i], other_subcomponents,
+                                                           evaluation_features, evaluation_targets, mutation_rate)
+
+        # Recombine and evaluate the complete solutions
+        fitness_values = recombine_and_evaluate(subcomponents_reduced, evaluation_features, evaluation_targets)
+
+        # Print the best fitness value in the current generation
+        print(f"Generation {generation + 1}: Best Fitness = {fitness_values.max()}")
+
+    # Return the best solution and its fitness value
+    best_index = np.argmax(fitness_values)
+    best_solution = np.concatenate([sub[best_index] for sub in subcomponents_reduced])
+    return best_solution, fitness_values.max()
+
+# Run the optimized CCA for testing (with fewer generations for quick feedback)
+best_solution_optimized, best_fitness_optimized = run_optimized_cca(data, num_generations=10)  # Run for 10 generations for testing
+best_solution_optimized, best_fitness_optimized
