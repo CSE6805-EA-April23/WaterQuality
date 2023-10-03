@@ -1,0 +1,46 @@
+import random
+import numpy as np
+from deap import base, creator, tools, algorithms
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_predict
+from sklearn.metrics import f1_score
+from sklearn.ensemble import RandomForestClassifier
+import pandas as pd
+
+# Load the dataset with missing values denoted as 'NA'
+data = pd.read_csv('/kaggle/input/water-quality/WaterQuality.csv', na_values='NA')
+
+data
+
+# Split the dataset into two subsets based on the target variable
+subset_with_target_1 = data[data['EVENT'] == 1].copy()  # Create a copy
+subset_with_target_0 = data[data['EVENT'] == 0].copy()  # Create a copy
+
+# Calculate the average values for each column in both subsets
+subset_with_target_1_means = subset_with_target_1.mean()
+subset_with_target_0_means = subset_with_target_0.mean()
+
+# Fill missing values in each subset with the corresponding average values
+subset_with_target_1.fillna(subset_with_target_1_means, inplace=True)
+subset_with_target_0.fillna(subset_with_target_0_means, inplace=True)
+
+# Merge the two subsets back into one dataset
+filled_data = pd.concat([subset_with_target_1, subset_with_target_0])
+
+# Extract features and target variable
+X = filled_data.drop('EVENT', axis=1)
+y = filled_data['EVENT']
+
+# Define a fitness function for cooperative coevolution using F1 score
+def evaluate_individual(ind):
+    # Extract hyperparameters from the individual
+    n_estimators, max_depth = ind
+    
+    # Create a random forest classifier with the specified hyperparameters
+    clf = RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, random_state=42)
+    
+    # Calculate cross-validated F1 score as the fitness score
+    y_pred = cross_val_predict(clf, X, y, cv=5)
+    f1 = f1_score(y, y_pred)
+    
+    return f1,
