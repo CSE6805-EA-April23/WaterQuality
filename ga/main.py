@@ -56,3 +56,17 @@ class MyProblem(ElementwiseProblem):
         #print(FN)
 
         out["F"] = [-f1, -f2]
+class MySampling(Sampling):
+    def _do(self, problem, n_samples, **kwargs):
+        return np.random.rand(n_samples, problem.n_var)
+
+problem = MyProblem()
+
+algorithm = NSGA2 (pop_size=10,
+                   sampling=MySampling())
+
+res = minimize(problem,
+               algorithm,
+               ("n_gen", 5),
+               verbose=False,
+               seed=1)
