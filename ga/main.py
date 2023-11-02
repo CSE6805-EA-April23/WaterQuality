@@ -5,9 +5,13 @@
 
 
 import numpy as np
+from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.core.problem import ElementwiseProblem
+from pymoo.core.sampling import Sampling
+from pymoo.optimize import minimize
 
 import preprocessing
+import accuracy
 
 class MyProblem(ElementwiseProblem):
 
@@ -70,3 +74,17 @@ res = minimize(problem,
                ("n_gen", 5),
                verbose=False,
                seed=1)
+
+best_solution = np.array(res.X)
+#print(best_solution[0][6])
+
+print("Best Solution (Decision Variables):")
+print(best_solution)
+
+best_objectives = res.F
+print("\nBest Objectives:")
+print(best_objectives)
+
+acc = accuracy.Accuracy()
+acc.measure_accuracy(best_solution)
+
