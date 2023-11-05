@@ -1,0 +1,100 @@
+import pandas as pd
+# Load the dataset
+data = pd.read_csv ('/content/sample_data/6_waterDataTestingUpload_Actual.csv')
+# Display Basic Info. and first few rows of the dataset
+info = data.info()
+head = data.head()
+info, head
+
+# Data Preprocessing
+# Drop the 'Unnamed: 0' column
+# data = data.drop(columns=['Unnamed: 0'])
+# impute missing values with median of each column
+data = data.fillna(data.median())
+# Convert 'EVENT' values from Text to 0 or 1 integer values (FALSE = 0 and TRUE = 1)
+data['EVENT'] = data['EVENT'].astype(int)
+# Display the first few rows of the preprocessed dataset
+preprocessed_head = data.head()
+preprocessed_info = data.info()
+preprocessed_head, preprocessed_info
+
+# Program for enetring the suggested model on which to decide an optimum threshold
+#Initialize a Single Individual with the Mathematical Model Weights in the Initial Population
+
+import numpy as np
+
+# Set the random seed for reproducibility
+np.random.seed(0)
+
+# Set parameters
+population_size = 1  # Initial population size
+num_features = 6  # num-features=n (excluding 'EVENT' column)
+individual_length = num_features  # Length of an individual (equal to the number of features)
+
+# Initialize population: Use Random Numbers
+initial_population = np.random.uniform(-1, 1, size=(population_size, individual_length))
+
+# Display the shape and first individuals in the initial population, I used 1 instead of 50
+initial_population_shape = initial_population.shape
+# initial_population_shape, initial_population[:1, :]
+
+# Enter the real Weights from the Fitted Mathematical Model
+#b1 = -0.44456288
+#b2 = -0.98128659
+#b3 = 0.68468416
+#b4 = 0.91258417
+#b5 = 0.88140215
+#b6 = 0.13923681
+
+# Replace Initial Population: Select weights from the Final Mathematical Model
+#initial_population[0] = ([b1, b2, b3, b4, b5, b6])
+
+initial_population[0] = ([0.71083951, -0.3230982 ,  1.02280672, -0.2610803 ,  0.85531582, -0.23545219])
+
+# Display the shape and first individuals in the initial population, I used 1 instead of 50
+initial_population_shape, initial_population[:1, :]
+
+# Testing/Validation Program for Determination of Accuracy of Fitness 
+# F1 Score and other Parameters for a fixed Vth
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import f1_score
+from sklearn.metrics import confusion_matrix
+def calculate_all_scores(individual, features, targets, vth):
+    """
+    Calculate the fitness of an individual based on classification accuracy.
+    Args:
+    individual (np.array): The weight vector representing an individual.
+    features (np.array): The feature matrix of the dataset.
+    targets (np.array): The target values of the dataset.
+
+    Returns:
+    float: Accuracy Score, F1 SCore, TN, FP, FN, TP for a solution individual.
+    """
+    # Calculate weighted sum of features
+    weighted_sum = np.dot(features, individual)
+    # Apply threshold to classify as 0 or 1
+    # predictions = (weighted_sum > 0).astype(int)
+    #predictions = (weighted_sum >= 0).astype(int)
+    predictions = (weighted_sum >= Vth).astype(int)
+    # Compute TN, FP, FN and TP values
+    tn, fp, fn, tp = confusion_matrix(targets, predictions, labels=[0, 1]).ravel()
+    # tn, fp, fn, tp = confusion_matrix(targets, predictions).ravel()
+    # Calculate and return accuracy as fitness, F1 score and other parameters
+    return accuracy_score(targets, predictions), f1_score(targets, predictions, average = 'binary'), tn, fp, fn, tp
+    # return accuracy_score(targets, predictions), f1_score(targets, predictions, average = 'binary')
+# Extract features and targets from the preprocessed dataset, I made changes in .drop
+features = data.drop(columns=['EVENT']).values
+targets = data['EVENT'].values
+
+# Test the fitness function with the individual in the initial population
+individual_1 = initial_population[0]
+
+# Insert a single threshold value below and make a function call for all scores
+#Vth = 0.0
+Vth = 10.0
+#Vth = -30.0
+individual_fitness, individual_F1_score, TN, FP, FN, TP = calculate_all_scores(individual_1, features, targets, Vth)
+#individual_fitness, individual_F1_score = calculate_all_scores(individual_1, features, targets, Vth)
+# At first give print out of the TN, FP, FN, TP values
+print(f" TN = {TN}, FP = {FP}, FN = {FN}, TP = {TP}")
+individual_1, individual_fitness, individual_F1_score, TN, FP, FN, TP
