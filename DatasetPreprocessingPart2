@@ -1,0 +1,13 @@
+# Data Preprocessing
+# Drop the 'Unnamed: 0' column, already deleted manually
+# data = data.drop(columns=['Unnamed: 0']), already deleted manually
+# impute missing values with median of each column
+data = data.fillna(data.median())
+
+# Convert 'EVENT' values from Text to 0 or 1 integer values (FALSE = 0 and TRUE = 1)
+data['EVENT'] = data['EVENT'].astype(int)
+
+# Display the first few rows of the preprocessed dataset
+preprocessed_head = data.head()
+preprocessed_info = data.info()
+preprocessed_head, preprocessed_info
