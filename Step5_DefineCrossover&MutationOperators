@@ -1,0 +1,40 @@
+def uniform_crossover(parent1, parent2):
+    """
+    Perform uniform crossover between two parents.
+    Args:
+    parent1 (np.array): The first parent individual.
+    parent2 (np.array): The second parent individual.
+
+    Returns:
+    np.array: The offspring individual.
+    """
+    # Generate a mask for selecting genes from parent1
+    mask = np.random.choice([True, False], size=parent1.shape, p=[0.5, 0.5])
+
+    # Initialize offspring
+    offspring = np.zeros_like(parent1)
+
+    # Select genes from parent1 and parent2 based on the mask
+    offspring[mask] = parent1[mask]
+    offspring[~mask] = parent2[~mask]
+
+    return offspring
+
+def mutate(individual, mutation_rate):
+    """
+    Apply mutation to an individual with a certain probability.
+    Args:
+    individual (np.array): The individual to mutate.
+    mutation_rate (float): The probability of mutating each gene.
+
+    Returns:
+    np.array: The mutated individual.
+    """
+    # Generate a mask for selecting genes to mutate
+    mutation_mask = np.random.choice([True, False], size=individual.shape, p=[mutation_rate, 1 - mutation_rate])
+
+    # Apply mutation: add small random values to the selected genes
+    mutation_values = np.random.uniform(-0.1, 0.1, size=individual.shape)
+    individual[mutation_mask] += mutation_values[mutation_mask]
+
+    return individual
