@@ -1,0 +1,17 @@
+import numpy as np
+
+# Set the random seed for reproducibility
+np.random.seed(0)
+
+# Set parameters
+population_size = 10  # Initial population size
+num_features = data.shape[1] - 1  # num-features=n, Number of features (excluding 'EVENT' column)
+individual_length = num_features  # Length of an individual (equal to the number of features)
+
+# Initialize population: Randomly generate weights for each individual in the population
+initial_population = np.random.uniform(-1, 1, size=(population_size, individual_length))
+
+# Display the shape and first few individuals in the initial population
+initial_population_shape = initial_population.shape
+# Display N=10 randomly generated individuals of the Initial Population
+initial_population[:10, :]
