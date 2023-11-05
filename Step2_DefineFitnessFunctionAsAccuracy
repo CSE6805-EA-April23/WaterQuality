@@ -1,0 +1,30 @@
+from sklearn.metrics import accuracy_score
+
+def calculate_fitness(individual, features, targets):
+    """
+    Calculate the fitness of an individual based on classification accuracy.
+    Args:
+    individual (np.array): The weight vector representing an individual.
+    features (np.array): The feature matrix of the dataset.
+    targets (np.array): The target values of the dataset.
+
+    Returns:
+    float: The fitness value of the individual.
+    """
+    # Calculate weighted sum of features
+    weighted_sum = np.dot(features, individual)
+
+    # Apply threshold to classify as 0 or 1
+    predictions = (weighted_sum > 0).astype(int)
+
+    # Calculate and return accuracy as fitness
+    return accuracy_score(targets, predictions)
+
+# Extract features and targets from the preprocessed dataset, I made changes in .drop
+features = data.drop(columns=['EVENT']).values
+targets = data['EVENT'].values
+
+# Test the fitness function with the first individual in the initial population
+first_individual_fitness = calculate_fitness(initial_population[0], features, targets)
+tenth_individual_fitness = calculate_fitness(initial_population[9], features, targets)
+initial_population[0], first_individual_fitness, initial_population[9], tenth_individual_fitness
