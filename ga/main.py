@@ -10,8 +10,10 @@ from pymoo.core.problem import ElementwiseProblem
 from pymoo.core.sampling import Sampling
 from pymoo.optimize import minimize
 
+
 import preprocessing
 import accuracy
+
 
 class MyProblem(ElementwiseProblem):
 
@@ -30,7 +32,8 @@ class MyProblem(ElementwiseProblem):
 
     def _evaluate(self, x, out, *args, **kwargs):
         p = preprocessing.Preprocessor()
-        input_array = p.read('dataset.csv')
+        initial_array = p.read('dataset.csv')
+        input_array = initial_array[0:99999]
         num_columns = len(input_array[0])
         TP = 0
         FP = 0
@@ -51,15 +54,25 @@ class MyProblem(ElementwiseProblem):
                     FN = FN + 1
                 else:
                     TN = TN + 1
-        f1 = TP / (TP + FP)
-        f2 = TP / (TP + FN)
+        if ( TP+FP == 0 ):
+            f1 = 0
+        else:
+            f1 = TP / (TP + FP)
+        if ( TP+FN == 0 ):
+            f2 = 0
+        else:
+            f2 = TP / (TP + FN)
 
+        #g1 = 2*(x[0]-0.1) * (x[0]-0.9) / 0.18
+        #g2 = - 20*(x[0]-0.4) * (x[0]-0.6) / 4.8
         #print(TP)
         #print(TN)
         #print(FP)
         #print(FN)
 
         out["F"] = [-f1, -f2]
+        #out["G"] = [g1, g2]
+
 class MySampling(Sampling):
     def _do(self, problem, n_samples, **kwargs):
         return np.random.rand(n_samples, problem.n_var)
@@ -83,8 +96,9 @@ print(best_solution)
 
 best_objectives = res.F
 print("\nBest Objectives:")
-print(best_objectives)
+print(best_objectives[0])
 
 acc = accuracy.Accuracy()
-acc.measure_accuracy(best_solution)
-
+#acc.measure_accuracy(best_solution)
+print("F1 score")
+print(acc.measure_f1_score(best_objectives))

@@ -43,7 +43,7 @@ class Preprocessor():
             min_values.append(min_value)
         min_values.append(0)
         min_values_array = np.array(min_values)
-        print(min_values_array)
+        #print(min_values_array)
         return min_values_array
     def max_array(self,filename):
         array = self.read('dataset.csv')
@@ -63,5 +63,5 @@ class Preprocessor():
             max_values.append(max_value)
         max_values.append(6)
         max_values_array = np.array(max_values)
-        print(max_values_array)
+        #print(max_values_array)
         return max_values_array

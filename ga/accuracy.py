@@ -14,7 +14,7 @@ class Accuracy():
         count = 0
         for i in range(len(input_array)):
             point = 0
-            for j in range(len(best_solution) - 1):
+            for j in range(len(best_solution[0]) - 1):
                 if (input_array[i][j + 3] < best_solution[0][j]):
                     point = point + 1
             if (point >= point_threshold):
@@ -26,3 +26,9 @@ class Accuracy():
         accuracy = count / num_rows
         print("Accuracy: ")
         print(accuracy)
+
+    def measure_f1_score(self, best_objective):
+        precision = best_objective[0][0]
+        recall = best_objective[0][1]
+        f1_score = 2 * (precision * recall) / (precision + recall)
+        print(-f1_score)
