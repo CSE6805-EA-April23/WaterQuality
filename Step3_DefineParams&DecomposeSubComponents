@@ -1,0 +1,27 @@
+# Set initial parameters
+num_subcomponents = 6  # Number of subcomponents, m=6 or m=3, change display commands at the end
+num_generations = 10  # Number of generations, I changed from 50 to 10
+mutation_rate = 0.05  # Mutation rate, I changed from 0.01 to 0.05
+
+# Decompose the problem into subcomponents
+# Distribute the weights among the subcomponents as evenly as possible
+subcomponent_size = individual_length // num_subcomponents
+remainder = individual_length % num_subcomponents
+
+# Initialize subcomponents
+subcomponents = []
+start = 0
+for i in range(num_subcomponents):
+    end = start + subcomponent_size + (1 if i < remainder else 0)
+    subcomponent = initial_population[:, start:end]
+    subcomponents.append(subcomponent)
+    start = end
+
+# Display the shape of each subcomponent
+subcomponent_shapes = [subcomponent.shape for subcomponent in subcomponents]
+# subcomponent_shapes
+
+# Display the content of each of the m=6 subcomponents, Comment below line when m=3, and uncomment when m=6
+subcomponent_shapes, subcomponents[0], subcomponents[1], subcomponents[2], subcomponents[3], subcomponents[4], subcomponents[5]
+#Display the content of each of the m=3 subcomponents, Comment below line when m=6, and uncomment when m=3
+#subcomponent_shapes, subcomponents[0], subcomponents[1], subcomponents[2]
