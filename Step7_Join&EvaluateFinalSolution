@@ -1,0 +1,30 @@
+def join_and_evaluate(subcomponents, features, targets):
+    """
+    join subcomponents to form complete solutions and evaluate their fitness.
+    Args:
+    subcomponents (list of np.array): The subcomponents to join.
+    features (np.array): The feature matrix of the dataset.
+    targets (np.array): The target values of the dataset.
+
+    Returns:
+    np.array: The fitness values of the complete solutions.
+    """
+    # Number of individuals in a subcomponent
+    num_individuals = subcomponents[0].shape[0]
+
+    # Initialize array to store fitness values
+    fitness_values = np.zeros(num_individuals)
+
+    # Join and evaluate each complete solution
+    for i in range(num_individuals):
+        # Combine sub-individuals from each subcomponent to form a complete individual
+        complete_individual = np.concatenate([sub[i] for sub in subcomponents])
+
+        # Evaluate and store fitness of the complete individual
+        fitness_values[i] = calculate_fitness(complete_individual, features, targets)
+
+    return fitness_values
+
+# Test joining and evaluation with the initial subcomponents
+initial_fitness_values = join_and_evaluate(subcomponents, features, targets)
+initial_fitness_values[:10]  # Display the fitness values of the first few complete solutions, I changed from 50 to 10
