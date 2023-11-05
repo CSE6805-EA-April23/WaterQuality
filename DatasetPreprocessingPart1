@@ -1,0 +1,8 @@
+import pandas as pd
+# Load the modified dataset with 6 decison variables and one EVENT column
+data = pd.read_csv ('/content/sample_data/6_gecco2018_water_quality.csv')
+
+# Display Basic Info. and first few rows of the dataset
+info = data.info()
+head = data.head()
+info, head
