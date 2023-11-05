@@ -1,0 +1,32 @@
+def tournament_selection(subcomponent, other_subcomponents, features, targets, k=3):
+    """
+    Select an individual using tournament selection.
+    Args:
+    subcomponent (np.array): The subcomponent from which to select individuals.
+    other_subcomponents (list of np.array): The other subcomponents to form complete individuals.
+    features (np.array): The feature matrix of the dataset.
+    targets (np.array): The target values of the dataset.
+    k (int): The number of individuals participating in the tournament. I've set k=3 for now.
+
+    Returns:
+    np.array: The selected individual.
+    """
+    # Select k random individuals from the subcomponent, k is set equal to 3, may be set to higher values
+    participants = subcomponent[np.random.choice(subcomponent.shape[0], size=k, replace=False)]
+
+    # Evaluate the fitness of each participant
+    fitness_values = []
+    for ind in participants:
+        # Combine with other subcomponents to form a complete individual
+        # complete_individual = np.concatenate([ind] + [sub.mean(axis=0) for sub in other_subcomponents])
+        # For Best Individual from other subcomponents
+        complete_individual = np.concatenate([ind] + [np.max(sub, axis=0) for sub in other_subcomponents])
+        fitness_values.append(calculate_fitness(complete_individual, features, targets))
+
+    # Select the participant with the highest fitness
+    winner_index = np.argmax(fitness_values)
+    return participants[winner_index]
+
+# Test the tournament selection operator with the first subcomponent
+selected_individual = tournament_selection(subcomponents[0], subcomponents[1:], features, targets)
+selected_individual
