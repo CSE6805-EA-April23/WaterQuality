@@ -1,0 +1,82 @@
+# This is the FINAL MAIN PROGRAM for Executing the CCA Model,
+# I've set num_generations = 5 for now as the terminating condition
+# Number of subcomponents may be m=6 or m=3, Enter the right one before running the main program
+def cooperative_coevolutionary_algorithm(data, num_generations=5, num_subcomponents=6, mutation_rate=0.05):
+    """
+    Main function to run the Cooperative Coevolutionary Algorithm (CCA).
+    Args:
+    data (pd.DataFrame): The input dataset.
+    num_generations (int): The number of generations to run the algorithm.
+    num_subcomponents (int): The number of subcomponents to use in the decomposition.
+    mutation_rate (float): The probability of mutating each gene.
+
+    Returns:
+    np.array: The best solution found by the algorithm.
+    float: The fitness value of the best solution.
+    """
+    # Extract features and targets from the preprocessed dataset
+    features = data.drop(columns=['EVENT']).values # I removed the EVENT column to select features only
+    targets = data['EVENT'].values
+
+    # Initialize population and decompose into subcomponents
+    initial_population = np.random.uniform(-1, 1, size=(population_size, individual_length))
+    subcomponents = decompose_into_subcomponents(initial_population, num_subcomponents)
+    # NEW VARIABLES DECLARED AND INITIALIZED
+    best_fitness = 0.0;
+    best_solution = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    # Main algorithm loop
+    for generation in range(num_generations):
+        # Evolve each subcomponent
+        for i in range(num_subcomponents):
+            other_subcomponents = subcomponents[:i] + subcomponents[i+1:]
+            subcomponents[i] = evolve_subcomponent(subcomponents[i], other_subcomponents, features, targets, mutation_rate)
+
+        # Join and evaluate the complete solutions
+        fitness_values = join_and_evaluate(subcomponents, features, targets)
+
+        # Adding the THREE new lines for storing the best solution of the current Generation
+        current_best_fitness = fitness_values.max()
+        current_best_index = np.argmax(fitness_values)
+        current_best_solution = np.concatenate([sub[current_best_index] for sub in subcomponents])
+        # Updaiting the best solution and best fitness at the end of each generation
+        if (current_best_fitness > best_fitness):
+          best_solution = current_best_solution
+          best_fitness = current_best_fitness
+        # Print the BEST SOLUTION in the CURRENT GENERATION
+        print(f"Generation {generation + 1}: Current Best Solution = {current_best_solution}")
+        # Print the best fitness value in the current generation
+        print(f"Generation {generation + 1}: Best Fitness = {current_best_fitness}")
+        #print(f"Generation {generation + 1}: Best Fitness = {fitness_values.max()}")
+       
+    # Return the best solution and its fitness value old code
+    #best_index = np.argmax(fitness_values)
+    #best_solution = np.concatenate([sub[best_index] for sub in subcomponents])
+    # return best_solution, fitness_values.max()
+    return best_solution, best_fitness
+
+def decompose_into_subcomponents(initial_population, num_subcomponents):
+    """
+    Decompose the initial population into subcomponents.
+    Args:
+    initial_population (np.array): The initial population of complete individuals.
+    num_subcomponents (int): The number of subcomponents to decompose into.
+
+    Returns:
+    list of np.array: The decomposed subcomponents.
+    """
+    subcomponent_size = individual_length // num_subcomponents
+    remainder = individual_length % num_subcomponents
+    subcomponents = []
+    start = 0
+    for i in range(num_subcomponents):
+        end = start + subcomponent_size + (1 if i < remainder else 0)
+        subcomponent = initial_population[:, start:end]
+        subcomponents.append(subcomponent)
+        start = end
+    return subcomponents
+
+# Run the Cooperative Coevolutionary Algorithm with the preprocessed data
+# Enter numgenerations = 5 to run for now for collecting data, you can set to your desired value
+best_solution, best_fitness = cooperative_coevolutionary_algorithm(data, num_generations=5)
+# Provide the Best Solution and Best Fitness
+best_solution, best_fitness
